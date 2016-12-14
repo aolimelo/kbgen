@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     if args.model=="e":
         dist_subjects, dist_objects = None,None
-        for source_model_name in args.source_models:
+        for source_model_name in args.source_kb_models:
             m1_model_path = base + "-" + source_model_name + ".pkl"
             m1_model = pickle.load(open(m1_model_path, "rb"))
             assert isinstance(m1_model, KBModelM1)

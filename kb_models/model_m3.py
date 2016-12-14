@@ -416,5 +416,5 @@ class KBModelM3(KBModelM2):
             self.update_pools(r_i, s_i, o_i)
             self.print_synthesis_details()
 
-        self.logger.info("synthesized facts = %d from %d"%(self.count_facts,self.synthetic_facts))
+        self.logger.debug("synthesized facts = %d from %d"%(self.count_facts,self.synthetic_facts))
         return g

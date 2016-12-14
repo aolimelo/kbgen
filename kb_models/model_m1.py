@@ -150,7 +150,7 @@ class KBModelM1(KBModel):
                 g.add((entity_i, RDF.type, type_i))
                 type_assertions += 1
             pbar.update(1)
-        self.logger.info(str(n_entities) + " entities with " + str(type_assertions) + " type assertions added")
+        self.logger.debug(str(n_entities) + " entities with " + str(type_assertions) + " type assertions added")
         return g,entitiy_types_dict
 
     def select_instance(self, n, model=None):
