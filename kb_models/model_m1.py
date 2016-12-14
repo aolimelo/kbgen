@@ -10,7 +10,8 @@ import tqdm
 
 class KBModelM1(KBModel):
     '''
-
+    Simplest knowledge base model composed of the distribution of entities over types and the joint distribution of
+    relations, subject and object type sets (represented with the chain rule)
     '''
     def __init__(self, type_hierarchy, prop_hierarchy, domains, ranges, n_entities, n_relations, n_facts, n_types, dist_types, dist_relations,
                         dist_domains_relation, dist_ranges_domain_relation, rel_dict, types_dict=None):

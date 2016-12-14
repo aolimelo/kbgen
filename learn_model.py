@@ -11,12 +11,13 @@ from rules import RuleSet
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("input",type=str,default=None,help="path to the tensor npz file")
-    parser.add_argument("base",type=str,default=None,help="path base to output")
     parser.add_argument("-m","--model",type=str,default="M1",help="choice of model [M1, M2, M2, e] (e requires -sm)")
     parser.add_argument("-sm","--source-kb-models",type=str,nargs="+",default=["M1","M2","M3"],help="source model with entity selection bias [M1, M2, M3]")
     parser.add_argument("-r","--rules-path",type=str,default=None,help="path to txt file with Amie horn rules")
 
     args = parser.parse_args()
+
+    base = args.input.replace(".npz","")
 
     print(args)
     print("learning "+args.model+" model")
@@ -28,28 +29,28 @@ if __name__ == '__main__':
 
     if args.model=="M1":
         models.append(KBModelM1.generate_from_tensor(args.input))
-        models_output.append(args.base + "-M1.pkl")
+        models_output.append(base + "-M1.pkl")
 
     if args.model=="M2":
-        m1_model_path = args.base + "-M1.pkl"
+        m1_model_path = base + "-M1.pkl"
         m1_model = pickle.load(open(m1_model_path, "rb"))
         assert isinstance(m1_model, KBModelM1)
         models.append(KBModelM2.generate_from_tensor(m1_model, args.input))
-        models_output.append(args.base + "-M2.pkl")
+        models_output.append(base + "-M2.pkl")
 
     if args.model=="M3":
-        m2_model_path = args.base + "-M2.pkl"
+        m2_model_path = base + "-M2.pkl"
         m2_model = pickle.load(open(m2_model_path, "rb"))
         assert isinstance(m2_model, KBModelM2)
         rel_dict = m2_model.rel_dict
         rules = RuleSet.parse_amie(args.rules_path,rel_dict)
         models.append(KBModelM3(m2_model, rules))
-        models_output.append(args.base + "-M3.pkl")
+        models_output.append(base + "-M3.pkl")
 
     if args.model=="e":
         dist_subjects, dist_objects = None,None
         for source_model_name in args.source_models:
-            m1_model_path = args.base + "-" + source_model_name + ".pkl"
+            m1_model_path = base + "-" + source_model_name + ".pkl"
             m1_model = pickle.load(open(m1_model_path, "rb"))
             assert isinstance(m1_model, KBModelM1)
             if dist_subjects is None and dist_objects is None:
@@ -59,7 +60,7 @@ if __name__ == '__main__':
                 models.append(model)
             else:
                 models.append(KBModelEMi(m1_model, dist_subjects, dist_objects))
-            models_output.append(args.base + "-e"+source_model_name+".pkl")
+            models_output.append(base + "-e"+source_model_name+".pkl")
 
     if models and models_output:
         for model, model_output in zip(models,models_output):

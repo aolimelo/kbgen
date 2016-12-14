@@ -10,7 +10,9 @@ import tqdm
 
 class KBModelM2(KBModelM1):
     '''
-
+    Model based on the KBModelM1 and containing nonreflexiveness, functionality and inverse funcitonality of relations
+    - To avoid violations of the three relation characteristics we keep pools of subjects and entities available for
+     each relation. Whenever a fact is generated the subject and the object are removed from their repective pools.
     '''
     def __init__(self, naive_model, functionalities, inv_functionalities, rel_densities,\
                  rel_distinct_subjs, rel_distinct_objs, reflexiveness):

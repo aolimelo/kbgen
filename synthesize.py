@@ -1,6 +1,5 @@
 import pickle
 from argparse import ArgumentParser
-from kb_models.model_m3 import KBModelM3
 from util import dump_tsv
 
 if __name__ == '__main__':

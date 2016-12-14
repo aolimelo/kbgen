@@ -1,5 +1,5 @@
 import numpy as np
-from rdflib import URIRef, OWL, RDFS
+from rdflib import OWL, RDFS
 from multiprocessing import Queue
 
 

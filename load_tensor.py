@@ -132,7 +132,7 @@ rdfs = {"type_hierarchy": type_hierarchy,
         "domains":domains,
         "ranges":ranges}
 
-np.savez(args.input.replace("."+rdf_format, "-ext.npz"),
+np.savez(args.input.replace("."+rdf_format, ".npz"),
         data=data,
         types=typedata,
         entities_dict=dict_s,
