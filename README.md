@@ -20,35 +20,35 @@ For this example we use a small knowledge base from the Semantic Web dog food ab
 - First load the knowledge base into a tensor:
 
  ```
- python load_tensor.py eswc-2015-complete.rdf
+ python load_tensor.py eswc2015.n3
  ```
 
- this will create the file eswc-2015-complete.npz with a tensor representation of the knowledge base
+ this will create the file eswc2015.npz with a tensor representation of the knowledge base
 
 - Then Learn the models:
 
  ```
- python learn_model.py eswc-2015-complete.ext -m M1
- python learn_model.py eswc-2015-complete.ext -m M2
- python learn_model.py eswc-2015-complete.ext -m M3 -r <path-to-amie-rules-file>
- python learn_model.py eswc-2015-complete.ext -m e -sm M1 M2 M3
+ python learn_model.py eswc2015.ext -m M1
+ python learn_model.py eswc2015.ext -m M2
+ python learn_model.py eswc2015.ext -m M3 -r <path-to-amie-rules-file>
+ python learn_model.py eswc2015.ext -m e -sm M1 M2 M3
  ```
 
  The commands need to be executed in the order above because one model is an extension of the other.
  The commands will create generate the models pickle files
 
- - ```eswc-2015-complete-M1.pkl```
- - ```eswc-2015-complete-M2.pkl```
- - ```eswc-2015-complete-M3.pkl```
- - ```eswc-2015-complete-eM1.pkl```, ```eswc-2015-complete-eM2.pkl``` and ```eswc-2015-complete-eM3.pkl```
+ - ```eswc2015-M1.pkl```
+ - ```eswc2015-M2.pkl```
+ - ```eswc2015-M3.pkl```
+ - ```eswc2015-eM1.pkl```, ```eswc2015-eM2.pkl``` and ```eswc2015-eM3.pkl```
 
 - From the learned models the knowledge base can be synthesized
 
  ```
- python synthesize.py eswc-2015-complete-M1.pkl eswc-2015-replica-M1.n3 -size 0.1
+ python synthesize.py eswc2015-M1.pkl eswc2015-replica-M1.n3 -size 0.1
  ```
 
- This will synthesize a replica of the dataset with 10% of the original size and dump it into ```eswc-2015-replica-M1.n3```
+ This will synthesize a replica of the dataset with 10% of the original size and dump it into ```eswc2015-replica-M1.n3```
 
 
 ## Requirements
