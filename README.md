@@ -15,7 +15,7 @@ The six models described in the paper are supported:
 ## Usage
 
 For this example we use a small knowledge base from the Semantic Web dog food about the conference
-[`ESWC2015`](http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015.n3), whose horn rules are available [`here`](http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015.n3).
+[`ESWC2015`](http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015.n3), whose horn rules are available [`here`](http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015-AmieRules.txt).
 
 - First load the knowledge base into a tensor:
 
