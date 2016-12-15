@@ -23,7 +23,7 @@ For this example we use a small knowledge base from the Semantic Web dog food ab
  python load_tensor.py eswc2015.n3
  ```
 
- this will create the file eswc2015.npz with a tensor representation of the knowledge base
+ this will create the file ```eswc2015.npz``` with a tensor representation of the knowledge base
 
 - Then Learn the models:
 
