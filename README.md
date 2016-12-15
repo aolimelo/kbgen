@@ -17,7 +17,7 @@ The six models described in the paper are supported:
 For this example we use a small knowledge base from the Semantic Web dog food about the conference
 [`ESWC2015`](http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015.n3), whose horn rules are available [`here`](http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015-AmieRules.txt).
 
-- First load the knowledge base into a tensor:
+- First load the knowledge base dump into a tensor:
 
  ```
  python load_tensor.py eswc2015.n3
@@ -56,5 +56,6 @@ The bash script ```example.sh``` contains the commands of the example above.
 
 ## Requirements
 The knowledge base creation is done with [`rdflib`](https://github.com/RDFLib/rdflib).
+The tensors are handled with [`scipy`](https://www.scipy.org/install.html), and the synthesis progress bar is done with [`tqdm`](https://pypi.python.org/pypi/tqdm).
 The knowledge graph model M3 requires a text file containing horn rules learned with
 [`AMIE`](https://www.mpi-inf.mpg.de/departments/databases-and-information-systems/research/yago-naga/amie/).
