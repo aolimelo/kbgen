@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-wget http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015.n3
-wget http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015-AmieRules.txt
+if [ ! -f eswc2015.n3 ]; then
+    wget http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015.n3
+fi
+if [ ! -f eswc2015-AmieRules.txt ]; then
+    wget http://data.dws.informatik.uni-mannheim.de/hmctp/kbgen/eswc2015-AmieRules.txt
+fi
 
 python load_tensor.py eswc2015.n3
 
