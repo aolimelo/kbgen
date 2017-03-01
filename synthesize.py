@@ -9,7 +9,9 @@ if __name__ == '__main__':
     parser.add_argument("-s","--size",type=float,default=1,help="sample size as number of original facts divided by step")
     parser.add_argument("-ne","--nentities",type=int,default=None,help="number of entities")
     parser.add_argument("-nf","--nfacts",type=int,default=None,help="number of facts")
-    parser.add_argument("-d","--debug",type=bool,default=False,help="debug mode")
+    parser.add_argument("-d","--debug",dest="debug",action="store_true",help="debug mode")
+    parser.set_defaults(debug=False)
+
 
     args = parser.parse_args()
 

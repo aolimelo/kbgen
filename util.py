@@ -6,12 +6,15 @@ from copy import deepcopy
 from load_tensor_tools import get_roots
 
 
-def create_logger(level=logging.INFO):
-    logger = logging.getLogger("rdfgen")
+def create_logger(level=logging.INFO, name="kbgen"):
+    logger = logging.getLogger(name)
     logger.setLevel(level)
-    logger_sh = logging.StreamHandler()
-    logger_sh.setLevel(level)
-    logger.addHandler(logger_sh)
+    #console_handler = logging.StreamHandler()
+    #console_handler.setLevel(level)
+    #logger.addHandler(console_handler)
+    file_handler = logging.FileHandler("%s.log"%name,mode='w')
+    file_handler.setLevel(level)
+    logger.addHandler(file_handler)
     return logger
 
 

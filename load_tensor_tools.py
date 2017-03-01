@@ -3,17 +3,17 @@ from rdflib import OWL, RDFS
 from multiprocessing import Queue
 
 
-def to_triples(X,order="pso"):
-    h,t,r = [],[],[]
+def to_triples(X, order="pso"):
+    h, t, r = [], [], []
     for i in range(len(X)):
         r.extend(np.full((X[i].nnz), i))
         h.extend(X[i].row.tolist())
         t.extend(X[i].col.tolist())
-    if order=="spo":
+    if order == "spo":
         triples = zip(h, r, t)
-    if order=="pso":
+    if order == "pso":
         triples = zip(r, h, t)
-    if order=="sop":
+    if order == "sop":
         triples = zip(h, t, r)
     return np.array(triples)
 
@@ -30,8 +30,8 @@ def load_ranges(inputDir):
 
 def load_type_hierarchy(inputDir):
     dataset = np.load(inputDir)
-    hierarchy =  dataset["type_hierarchy"].item() if "type_hierarchy" in dataset else None
-    for i,n in hierarchy.items():
+    hierarchy = dataset["type_hierarchy"].item() if "type_hierarchy" in dataset else None
+    for i, n in hierarchy.items():
         try:
             n.children = [hierarchy[c] for c in n.children]
             n.parents = [hierarchy[p] for p in n.parents]
@@ -80,7 +80,7 @@ def loadTypesNpz(inputDir):
 
 def get_prop_dag(g, dict_rel):
     prop_dag = {}
-    for s,p,o in g.triples((None,RDFS.subPropertyOf,None)):
+    for s, p, o in g.triples((None, RDFS.subPropertyOf, None)):
         if (s in dict_rel) and (o in dict_rel):
 
             s_id = dict_rel[s]
@@ -99,7 +99,7 @@ def get_prop_dag(g, dict_rel):
 
 def get_prop_tree(g, dict_rel):
     prop_tree = {}
-    for s,p,o in g.triples((None,RDFS.subPropertyOf,None)):
+    for s, p, o in g.triples((None, RDFS.subPropertyOf, None)):
         if (s in dict_rel) and (o in dict_rel):
             s_id = dict_rel[s]
             o_id = dict_rel[o]
@@ -122,13 +122,13 @@ def get_type_dag(g, dict_type):
 
     # getting equivalent classes
     equi_classes = {}
-    for s,p,o in g.triples((None,OWL.equivalentClass,None)):
+    for s, p, o in g.triples((None, OWL.equivalentClass, None)):
         equi_classes[s] = o
         equi_classes[o] = s
 
-    for s,p,o in g.triples((None,RDFS.subClassOf,None)):
+    for s, p, o in g.triples((None, RDFS.subClassOf, None)):
         if (s in dict_type or (s in equi_classes and equi_classes[s] in dict_type)) and \
-           (o in dict_type or (o in equi_classes and equi_classes[o] in dict_type)):
+                (o in dict_type or (o in equi_classes and equi_classes[o] in dict_type)):
 
             if s not in dict_type:
                 s = equi_classes[s]
@@ -154,13 +154,13 @@ def get_type_tree(g, dict_type):
 
     # getting equivalent classes
     equi_classes = {}
-    for s,p,o in g.triples((None,OWL.equivalentClass,None)):
+    for s, p, o in g.triples((None, OWL.equivalentClass, None)):
         equi_classes[s] = o
         equi_classes[o] = s
 
-    for s,p,o in g.triples((None,RDFS.subClassOf,None)):
+    for s, p, o in g.triples((None, RDFS.subClassOf, None)):
         if (s in dict_type or (s in equi_classes and equi_classes[s] in dict_type)) and \
-           (o in dict_type or (o in equi_classes and equi_classes[o] in dict_type)):
+                (o in dict_type or (o in equi_classes and equi_classes[o] in dict_type)):
 
             if s not in dict_type:
                 s = equi_classes[s]
@@ -175,10 +175,9 @@ def get_type_tree(g, dict_type):
                 if s_id not in type_tree:
                     type_tree[s_id] = TreeNode(s_id, s, type_tree[o_id], children=[])
 
-
                 if type_tree[s_id].parent is None:
                     type_tree[s_id].parent = type_tree[o_id]
-                if type_tree[s_id]. parent == type_tree[o_id]:
+                if type_tree[s_id].parent == type_tree[o_id]:
                     type_tree[o_id].children.append(type_tree[s_id])
 
     return type_tree
@@ -186,7 +185,7 @@ def get_type_tree(g, dict_type):
 
 def get_domains(g, dict_rel, dict_type):
     domains = {}
-    for s,p,o in g.triples((None,RDFS.domain,None)):
+    for s, p, o in g.triples((None, RDFS.domain, None)):
         if s in dict_rel and o in dict_type:
             domains[dict_rel[s]] = dict_type[o]
     return domains
@@ -194,22 +193,24 @@ def get_domains(g, dict_rel, dict_type):
 
 def get_ranges(g, dict_rel, dict_type):
     ranges = {}
-    for s, p, o in g.triples((None,RDFS.range, None)):
+    for s, p, o in g.triples((None, RDFS.range, None)):
         if s in dict_rel and o in dict_type:
             ranges[dict_rel[s]] = dict_type[o]
     return ranges
 
+
 def load_type_dict(input_path):
     dataset = np.load(input_path)
     dict_type = dataset["types_dict"]
-    if not isinstance(dict_type,dict):
+    if not isinstance(dict_type, dict):
         dict_type = dict_type.item()
     return dict_type
+
 
 def load_relations_dict(input_path):
     dataset = np.load(input_path)
     dict_rel = dataset["relations_dict"]
-    if not isinstance(dict_rel,dict):
+    if not isinstance(dict_rel, dict):
         dict_rel = dict_rel.item()
     return dict_rel
 
@@ -224,11 +225,11 @@ class TreeNode(object):
     def __str__(self):
         return self.name.__str__()
 
-    def print_tree(self,tab="",pool=None):
-        print(tab+self.name)
+    def print_tree(self, tab="", pool=None):
+        print(tab + self.name)
         for child in self.children:
             if self != child and self == child.parent:
-                child.print_tree(tab+"\t")
+                child.print_tree(tab + "\t")
 
     def get_all_parents(self):
         parents = []
@@ -252,11 +253,11 @@ class DAGNode(object):
     def __str__(self):
         return self.name.__str__()
 
-    def print_tree(self,tab="",pool=None):
-        print(tab+self.name)
+    def print_tree(self, tab="", pool=None):
+        print(tab + self.name)
         for child in self.children:
             if self != child and self in child.parents:
-                child.print_tree(tab+"\t")
+                child.print_tree(tab + "\t")
 
     def get_all_parents(self):
         parents = set()
@@ -286,17 +287,18 @@ def get_roots(hier):
     else:
         roots = []
         for i, n in hier.items():
-            if isinstance(n,DAGNode):
+            if isinstance(n, DAGNode):
                 if not n.parents:
                     roots.append(n)
-            if isinstance(n,TreeNode):
+            if isinstance(n, TreeNode):
                 if n.parent is None:
                     roots.append(n)
         return roots
 
+
 def dag_to_tree(dag):
     tree = {}
-    for i,n in dag.items():
+    for i, n in dag.items():
         tree[i] = TreeNode(n.node_id, n.name)
     for i, n in dag.items():
         tree[i].children = [tree[c.node_id] for c in n.children]

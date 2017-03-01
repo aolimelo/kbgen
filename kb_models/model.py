@@ -1,5 +1,6 @@
 import random
 
+
 class KBModel(object):
     def __init__(self):
         random.seed(42)
@@ -10,17 +11,5 @@ class KBModel(object):
     def select_instance(self, n, dist=None):
         pass
 
-    def add_fact(self,g,fact):
+    def add_fact(self, g, fact):
         pass
-
-
-
-
-
-
-
-
-
-
-
-

@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from kb_models.model_m2 import KBModelM2
 from numpy.random import choice
 from rdflib import Graph
+import datetime
 
 from util import URIEntity, URIRelation, normalize, create_logger
 
@@ -20,9 +21,10 @@ class KBModelM3(KBModelM2):
       sure the original distribution is not disturbed.
     - Horn rules are assumed to be produced by AMIE
     '''
+
     def __init__(self, model_naive, rules):
         assert type(model_naive) == KBModelM2
-        for k,v in model_naive.__dict__.items():
+        for k, v in model_naive.__dict__.items():
             self.__dict__[k] = v
         self.rules = rules
         self.max_recurr = 10
@@ -39,7 +41,7 @@ class KBModelM3(KBModelM2):
         self.logger.debug("step %f" % self.step)
         self.logger.debug(self.d_r)
 
-    def plot_histogram(self,vals,weights):
+    def plot_histogram(self, vals, weights):
         '''
         Plots a histrogram of precalculated counts (display distribution)
         :param vals: values of the bins (x axis)
@@ -50,7 +52,7 @@ class KBModelM3(KBModelM2):
         y /= np.sum(y)
 
         plt.figure(0)
-        n, bins, patches = plt.hist(x,weights=y,bins=len(vals), normed=1, facecolor='green', alpha=0.75)
+        n, bins, patches = plt.hist(x, weights=y, bins=len(vals), normed=1, facecolor='green', alpha=0.75)
         plt.show()
 
     def start_counts(self):
@@ -65,7 +67,7 @@ class KBModelM3(KBModelM2):
         self.count_violate_non_reflexiveness_facts = 0
         self.key_error_count = 0
 
-    def validate_owl(self,r_i,s_id,o_id):
+    def validate_owl(self, r_i, s_id, o_id):
         '''
         Validates functionality, inverse functionality and non-reflexiveness for a given fact
         :param r_i: relation id
@@ -98,15 +100,20 @@ class KBModelM3(KBModelM2):
         :param fact: added fact
         :param recurr_count: recursion count (tracks the recursion depth)
         '''
-        s,p,o = fact
-        if recurr_count<self.max_recurr and r_i in self.rules.rules_per_relation:
+
+        s, p, o = fact
+        if recurr_count < self.max_recurr and r_i in self.rules.rules_per_relation:
             rules = self.rules.rules_per_relation[r_i]
             for rule in rules:
                 rand_number = random.random()
                 if (self.pca and rand_number < rule.pca_conf) or (not self.pca and rand_number < rule.std_conf):
-                    new_facts = rule.produce(g,s,p,o)
+                    start_t = datetime.datetime.now()
+                    new_facts = rule.produce(g, s, p, o)
+                    delta = datetime.datetime.now() - start_t
+
+                    rule_added_facts = 0
                     for new_fact in new_facts:
-                        s,p,o = new_fact
+                        s, p, o = new_fact
                         s_id = URIEntity.extract_id(s).id
                         o_id = URIEntity.extract_id(o).id
                         r_i = URIRelation.extract_id(p).id
@@ -114,14 +121,16 @@ class KBModelM3(KBModelM2):
                         s_types = self.types_entities[s_id]
                         o_types = self.types_entities[o_id]
 
-                        if self.validate_owl(r_i,s_id,o_id) and self.d_rdr[r_i][s_types][o_types] > 0:
-                            if self.add_fact(g,new_fact):
-                                self.update_distributions(r_i,s_types,o_types)
+                        if self.validate_owl(r_i, s_id, o_id) and self.d_rdr[r_i][s_types][o_types] > 0:
+                            if self.add_fact(g, new_fact):
+                                rule_added_facts += 1
+                                self.update_distributions(r_i, s_types, o_types)
                                 self.update_pools(r_i, s_id, o_id)
                                 self.count_rule_facts += 1
-                                self.produce_rules(g,r_i,new_fact,recurr_count+1)
+                                self.produce_rules(g, r_i, new_fact, recurr_count + 1)
                         else:
                             self.count_exhausted_facts += 1
+                    self.query_time.debug("rule_size=%d, prod_facts=%d, new_facts=%d, query_time_micros=%d, kb_size=%d" % (len(rule.antecedents), len(new_facts), rule_added_facts, delta.microseconds, len(g)))
 
     def update_distributions(self, r_i, s_types, o_types):
         '''
@@ -140,14 +149,13 @@ class KBModelM3(KBModelM2):
             if r_i in self.d_dr and s_types in self.d_dr[r_i]:
                 self.d_dr[r_i][s_types] -= step
                 if self.d_dr[r_i][s_types] <= 0:
-                    self.delete_relation_domain_entries(r_i,s_types)
+                    self.delete_relation_domain_entries(r_i, s_types)
                 if s_types in self.d_rdr[r_i] and o_types in self.d_rdr[r_i][s_types]:
                     self.d_rdr[r_i][s_types][o_types] -= step
                     if self.d_rdr[r_i][s_types][o_types] <= 0:
-                        self.delete_relation_domain_range_entries(r_i,s_types,o_types)
+                        self.delete_relation_domain_range_entries(r_i, s_types, o_types)
 
-        self.delete_empty_entries(r_i,s_types)
-
+        self.delete_empty_entries(r_i, s_types)
 
     def prune_distrbutions(self):
         '''
@@ -162,25 +170,25 @@ class KBModelM3(KBModelM2):
             for domain in self.d_dr[r].keys():
                 if domain not in self.entities_types.keys() or not self.entities_types[domain]:
                     counts_removed += self.d_dr[r][domain]
-                    self.delete_relation_domain_entries(r,domain)
+                    self.delete_relation_domain_entries(r, domain)
                 else:
                     for range in set(self.d_rdr[r][domain].keys()):
                         if range not in self.entities_types.keys() or not self.entities_types[range]:
                             counts_removed += self.d_rdr[r][domain][range]
-                            self.delete_relation_domain_range_entries(r,domain,range)
+                            self.delete_relation_domain_range_entries(r, domain, range)
 
                     if not self.d_rdr[r][domain]:
                         counts_removed += self.d_dr[r][domain]
-                        self.delete_relation_domain_entries(r,domain)
+                        self.delete_relation_domain_entries(r, domain)
 
             if not self.d_dr[r]:
                 counts_removed += self.d_r[r]
                 self.delete_relation_entries(r)
 
         if counts_removed > 0:
-            self.step *= (self.n_facts-counts_removed)/self.n_facts
+            self.step *= (self.n_facts - counts_removed) / self.n_facts
 
-    def delete_relation_entries(self,r_i):
+    def delete_relation_entries(self, r_i):
         if r_i in self.d_r:
             del self.d_r[r_i]
         if r_i in self.d_dr:
@@ -188,17 +196,17 @@ class KBModelM3(KBModelM2):
         if r_i in self.d_rdr:
             del self.d_rdr[r_i]
 
-    def delete_relation_domain_entries(self,r_i,domain):
+    def delete_relation_domain_entries(self, r_i, domain):
         if r_i in self.d_rdr and domain in self.d_rdr[r_i]:
             del self.d_rdr[r_i][domain]
         if r_i in self.d_dr and domain in self.d_dr[r_i]:
             del self.d_dr[r_i][domain]
 
-    def delete_relation_domain_range_entries(self,r_i,domain,range):
+    def delete_relation_domain_range_entries(self, r_i, domain, range):
         if r_i in self.d_rdr and domain in self.d_rdr[r_i] and range in self.d_rdr[r_i][domain]:
             del self.d_rdr[r_i][domain][range]
 
-    def delete_empty_entries(self,r_i,s_types):
+    def delete_empty_entries(self, r_i, s_types):
         counts_removed = 0
         if r_i in self.d_dr and not self.d_dr[r_i]:
             counts_removed += self.d_r[r_i]
@@ -221,11 +229,11 @@ class KBModelM3(KBModelM2):
                 self.inv_func_rel_subj_pool[r_i].remove(o_i)
 
             if (r_i in self.func_rel_subj_pool and not self.func_rel_subj_pool[r_i]) or \
-               (r_i in self.inv_func_rel_subj_pool and not self.inv_func_rel_subj_pool[r_i]):
+                    (r_i in self.inv_func_rel_subj_pool and not self.inv_func_rel_subj_pool[r_i]):
                 counts_removed += self.d_r[r_i] if r_i in self.d_r else 0
                 self.delete_relation_entries(r_i)
 
-        if counts_removed>0:
+        if counts_removed > 0:
             remaining_facts = float(self.synthetic_facts - self.count_facts) * self.step
             self.step *= (remaining_facts - counts_removed) / remaining_facts
 
@@ -246,7 +254,7 @@ class KBModelM3(KBModelM2):
                     self.d_r[r_i] = len(self.inv_func_rel_subj_pool[r_i])
                     counts_removed += diff
 
-            if counts_removed>0:
+            if counts_removed > 0:
                 remaining_facts = float(self.synthetic_facts - self.count_facts) * self.step
                 self.step *= (remaining_facts - counts_removed) / remaining_facts
 
@@ -255,10 +263,23 @@ class KBModelM3(KBModelM2):
     def synthesize(self, size=1.0, ne=None, nf=None, debug=False, pca=True):
         print("Synthesizing HORN model")
 
-        if debug:
-            self.logger = create_logger(logging.DEBUG)
-        else:
-            self.logger = create_logger(logging.INFO)
+        level = logging.DEBUG if debug else logging.INFO
+        self.logger = create_logger(level, name="kbgen")
+        self.synth_time = create_logger(level, name="synth_time")
+        self.query_time = create_logger(level, name="query_logger")
+
+        #self.query_time = logging.getLogger("synth_time")
+        #fh_synth = logging.FileHandler("synth_time.log",mode='w')
+        #fh_synth.setLevel(level)
+        #self.synth_time.addHandler(fh_synth)
+        #self.synth_time.setLevel(level)
+
+        #self.query_time = logging.getLogger("query_logger")
+        #fh_query = logging.FileHandler("query_time.log",mode='w')
+        #fh_query.setLevel(level)
+        #self.query_time.addHandler(fh_query)
+        #self.query_time.info("just to fucking test")
+        #self.query_time.setLevel(level)
 
         self.pca = pca
 
@@ -267,14 +288,14 @@ class KBModelM3(KBModelM2):
         g = Graph()
 
         # self.step = 1
-        self.step = 1.0/float(size)
+        self.step = 1.0 / float(size)
 
-        self.logger.info("%d \tentities and %d \tfacts \t on original dataset" % (self.n_entities,self.n_facts))
+        self.logger.info("%d \tentities and %d \tfacts \t on original dataset" % (self.n_entities, self.n_facts))
         self.synthetic_facts = self.n_facts
         self.synthetic_entities = self.n_entities
 
-        self.synthetic_entities = int(self.n_entities/self.step)
-        self.synthetic_facts = int(self.n_facts/self.step)
+        self.synthetic_entities = int(self.n_entities / self.step)
+        self.synthetic_facts = int(self.n_facts / self.step)
         if ne is not None:
             self.synthetic_entities = ne
         if nf is not None:
@@ -282,19 +303,21 @@ class KBModelM3(KBModelM2):
 
         self.step /= 1.1
 
-        self.logger.info("%d \tentities and %d \tfacts \t on synthetic dataset" % (self.synthetic_entities, self.synthetic_facts))
+        self.logger.info(
+            "%d \tentities and %d \tfacts \t on synthetic dataset" % (self.synthetic_entities, self.synthetic_facts))
         quadratic_relations = self.check_for_quadratic_relations()
-        adjusted_dist_relations = self.adjust_quadratic_relation_distributions(deepcopy(self.dist_relations), quadratic_relations)
+        adjusted_dist_relations = self.adjust_quadratic_relation_distributions(deepcopy(self.dist_relations),
+                                                                               quadratic_relations)
 
-        self.inv_rel_dict = {k:v for v,k in self.rel_dict.items()}
+        self.inv_rel_dict = {k: v for v, k in self.rel_dict.items()}
 
-        self.logger.debug("quadratic relations: %s"%[self.inv_rel_dict[r] for r in quadratic_relations])
-        g = self.synthesize_types(g,self.n_types)
-        g = self.synthesize_relations(g,self.n_relations)
+        self.logger.debug("quadratic relations: %s" % [self.inv_rel_dict[r] for r in quadratic_relations])
+        g = self.synthesize_types(g, self.n_types)
+        g = self.synthesize_relations(g, self.n_relations)
         g = self.synthesize_schema(g)
-        g, entities_types = self.synthesize_entities(g,self.synthetic_entities)
+        g, entities_types = self.synthesize_entities(g, self.synthetic_entities)
 
-        self.types_entities = {k:v for v in entities_types.keys() for k in entities_types[v]}
+        self.types_entities = {k: v for v in entities_types.keys() for k in entities_types[v]}
         self.entities_types = entities_types
 
         self.logger.debug("copying distributions")
@@ -309,21 +332,22 @@ class KBModelM3(KBModelM2):
         self.inv_func_rel_subj_pool = self.invfunctional_rels_subj_pool()
         self.d_r = self.adjust_func_inv_func_relations()
 
-        self.saturated_subj = {r_i:{} for r_i in range(self.n_relations)}
-        self.saturated_obj = {r_i:{} for r_i in range(self.n_relations)}
+        self.saturated_subj = {r_i: {} for r_i in range(self.n_relations)}
+        self.saturated_obj = {r_i: {} for r_i in range(self.n_relations)}
 
-        self.logger.debug("func rels subj pool = %s"%{r:len(ents) for r,ents in self.func_rel_subj_pool.items()})
-        self.logger.debug("inv func rels subj pool = %s" %{r:len(ents) for r,ents in self.inv_func_rel_subj_pool.items()})
+        self.logger.debug("func rels subj pool = %s" % {r: len(ents) for r, ents in self.func_rel_subj_pool.items()})
+        self.logger.debug(
+            "inv func rels subj pool = %s" % {r: len(ents) for r, ents in self.inv_func_rel_subj_pool.items()})
 
         self.logger.info("synthesizing facts")
         self.pbar = tqdm.tqdm(total=self.synthetic_facts)
+        self.start_t = datetime.datetime.now()
         while self.count_facts < self.synthetic_facts and self.d_r:
             r_i = choice(self.d_r.keys(), 1, normalize(self.d_r.values()))[0]
             s_types = None
             o_types = None
             s_i = o_i = -1
-            n_entities_subject = n_entities_object = -1
-            self.logger.debug("relation %d = %s"%(r_i,self.inv_rel_dict[r_i]))
+            self.logger.debug("relation %d = %s" % (r_i, self.inv_rel_dict[r_i]))
 
             if r_i in self.d_dr and self.d_dr[r_i]:
                 s_types = choice(self.d_dr[r_i].keys(), 1, normalize(self.d_dr[r_i].values()))[0]
@@ -332,9 +356,10 @@ class KBModelM3(KBModelM2):
                     subject_entities = subject_entities.intersection(self.func_rel_subj_pool[r_i])
 
                 n_entities_subject = len(subject_entities)
-
+                self.logger.debug("s_types %s with %d entities in pool" % (str(s_types),n_entities_subject))
                 if n_entities_subject > 0 and s_types in self.d_rdr[r_i] and self.d_rdr[r_i][s_types]:
-                    o_types = choice(self.d_rdr[r_i][s_types].keys(), 1, normalize(self.d_rdr[r_i][s_types].values()))[0]
+                    o_types = choice(self.d_rdr[r_i][s_types].keys(), 1, normalize(self.d_rdr[r_i][s_types].values()))[
+                        0]
                     object_entities = set(entities_types[o_types])
                     if r_i in self.inv_func_rel_subj_pool:
                         object_entities = object_entities.intersection(self.inv_func_rel_subj_pool[r_i])
@@ -351,7 +376,7 @@ class KBModelM3(KBModelM2):
 
                     n_entities_subject = len(subject_entities)
                     n_entities_object = len(object_entities)
-
+                    self.logger.debug("o_types %s with %d entities in pool" % (str(o_types), n_entities_object))
                     if n_entities_object > 0 and n_entities_subject > 0:
 
                         subject_model = self.select_subject_model(r_i, s_types)
@@ -365,9 +390,10 @@ class KBModelM3(KBModelM2):
                         s = URIEntity(s_i).uri
                         o = URIEntity(o_i).uri
                         p = URIRelation(r_i).uri
-                        fact = (s,p,o)
+                        fact = (s, p, o)
+                        self.logger.debug("try to add triple (e%d,r%d,e%d)" % (s_i,r_i,o_i))
                         try:
-                            o_offset,s_offset = 0,0
+                            o_offset, s_offset = 0, 0
                             if random.random() < 0.5:
                                 while not self.add_fact(g, (s, p, o)) and o_offset < len(object_entities):
                                     # try to add triple with other objects
@@ -389,14 +415,14 @@ class KBModelM3(KBModelM2):
                                     s_i = list(subject_entities)[(s_pool_i + s_offset) % len(subject_entities)]
                                     s = URIEntity(s_i).uri
                                 if s_offset >= len(subject_entities):
-                                    #impossible to add facts for r_i with object o_i
+                                    # impossible to add facts for r_i with object o_i
                                     if s_types not in self.saturated_obj[r_i]:
                                         self.saturated_obj[r_i][s_types] = set()
                                     self.saturated_obj[r_i][s_types].add(o_i)
 
                             if o_offset < len(object_entities) and s_offset < len(subject_entities):
-                                self.update_distributions(r_i,s_types,o_types)
-                                self.produce_rules(g,r_i,(s,p,o))
+                                self.update_distributions(r_i, s_types, o_types)
+                                self.produce_rules(g, r_i, (s, p, o))
                                 self.update_pools(r_i, s_i, o_i)
                                 continue
                         except KeyError:
@@ -408,13 +434,16 @@ class KBModelM3(KBModelM2):
             else:
                 self.count_exhausted_facts += 1
 
-            if n_entities_object == 0:
+            if n_entities_subject == 0:
+                self.logger.debug("deleting relation domain entries for relation %d and subj types %s"%(r_i,str(s_types)))
                 self.delete_relation_domain_entries(r_i, s_types)
             if n_entities_object == 0:
+                self.logger.debug(
+                    "deleting relation range entries for relation %d and subj types %s and object types %s" % (r_i, str(s_types), str(o_types)))
                 self.delete_relation_domain_range_entries(r_i, s_types, o_types)
-            self.delete_empty_entries(r_i,s_types)
+            self.delete_empty_entries(r_i, s_types)
             self.update_pools(r_i, s_i, o_i)
             self.print_synthesis_details()
 
-        self.logger.debug("synthesized facts = %d from %d"%(self.count_facts,self.synthetic_facts))
+        self.logger.debug("synthesized facts = %d from %d" % (self.count_facts, self.synthetic_facts))
         return g
