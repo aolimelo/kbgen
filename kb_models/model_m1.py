@@ -203,7 +203,7 @@ class KBModelM1(KBModel):
         self.entities_types = entities_types
 
         self.logger.info("synthesizing facts")
-        dist_relations = normalize(self.dist_relations.values())
+        dist_relations = normalize(adjusted_dist_relations)
 
         dist_domains_relation = {}
         for rel in relations:
